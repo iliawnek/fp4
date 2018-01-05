@@ -9,10 +9,27 @@ module Tafl.Core
   , initGameState
   , commandFromString
   , help_text
+  , printBoard
   ) where
 
 import System.Exit
 import Data.List
+
+data Square = Object
+            | Lambda
+            | Guard
+            | Empty
+
+starting_board :: [[Square]]
+starting_board = [[Empty, Empty, Empty, Object, Object, Object, Empty, Empty, Empty]
+                 ,[Empty, Empty, Empty, Empty, Object, Empty, Empty, Empty, Empty]
+                 ,[Empty, Empty, Empty, Empty, Guard, Empty, Empty, Empty, Empty]
+                 ,[Object, Empty, Empty, Empty, Guard, Empty, Empty, Empty, Object]
+                 ,[Object, Object, Guard, Guard, Lambda, Guard, Guard, Object, Object]
+                 ,[Object, Empty, Empty, Empty, Guard, Empty, Empty, Empty, Object]
+                 ,[Empty, Empty, Empty, Empty, Guard, Empty, Empty, Empty, Empty]
+                 ,[Empty, Empty, Empty, Empty, Object, Empty, Empty, Empty, Empty]
+                 ,[Empty, Empty, Empty, Object, Object, Object, Empty, Empty, Empty]]
 
 -- | The core game state that captures the state of the board, and
 -- whether we are playing a game or not.
@@ -21,16 +38,17 @@ import Data.List
 data GameState = GameState
   { inGame     :: Bool
   , inTestMode :: Bool
+  , board      :: [[Square]]
   }
 
 defaultGameState :: GameState
-defaultGameState = GameState False False
+defaultGameState = GameState False False starting_board
 
 -- Finish initGameState to read a board state from file.
 initGameState :: Maybe FilePath
               -> Bool
               -> IO (Either TaflError GameState)
-initGameState Nothing  b = pure $ Right $ GameState False b
+initGameState Nothing  b = pure $ Right $ GameState False b starting_board
 initGameState (Just f) b = pure $ Left NotYetImplemented
 
 -- | Errors encountered by the game, you will need to extend this to capture *ALL* possible errors.
@@ -72,3 +90,13 @@ help_text = unlines $
   where
     prettyCmdHelp :: (String, String) -> String
     prettyCmdHelp (cmd, help) = concat ["\t:", cmd, "\t", " "] ++ help
+
+printSquare :: Square -> String
+printSquare Empty = " "
+printSquare Object = "O"
+printSquare Lambda = "L"
+printSquare Guard = "G"
+
+printBoard :: GameState -> IO ()
+printBoard st = do
+  putStrLn $ unlines [unwords [printSquare ((board st !! y) !! x) | x <- [0..8]] | y <- [0..8]]
