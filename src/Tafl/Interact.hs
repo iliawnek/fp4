@@ -27,7 +27,7 @@ repl st = do
   where
     doREPL :: GameState -> IO ()
     doREPL st = do
-      when (inGame st) $ printBoard st
+      when (inGame st) $ printMoveInfo st
       putStr "tafl> "
       raw_cmd <- getLine
       when (inTestMode st) $ putStr "\n"

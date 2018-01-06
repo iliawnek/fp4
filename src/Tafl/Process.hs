@@ -27,14 +27,18 @@ processCommand st Exit = do
   exitWith ExitSuccess
 
 processCommand st Start = do
-   let newSt = st {inGame=True}
-   putStrLn "Starting Game."
-   pure $ Right newSt
+  let newSt = st {inGame=True}
+  putStrLn "Starting Game."
+  pure $ Right newSt
 
 processCommand st Stop = do
-   let newSt = st {inGame=False}
-   putStrLn "Stopping Game."
-   pure $ Right newSt
+  let newSt = st {inGame=False}
+  putStrLn "Stopping Game."
+  pure $ Right newSt
+
+processCommand st (Move src dst) = do
+  let newSt = makeMove st src dst
+  pure $ Right newSt
 
 -- The remaining commands are to be added here.
 
@@ -56,9 +60,9 @@ processCommandStr st str =
 printError :: TaflError -> IO ()
 printError (NotYetImplemented) = do
   putStrLn "Not Yet Implemented."
+printError (MalformedCommand) = do
+  putStrLn "The entered command was malformed."
 printError (UnknownCommand) = do
-  putStrLn "The command was not recognised"
-printError (InvalidCommand msg) = do
-  putStrLn "You entered an invalid command:"
-  putStr "\t"
-  putStrLn msg
+  putStrLn "The entered command was not recognised."
+printError (CurrentlyUnusableCommand) = do
+  putStrLn "The command cannot be used."
