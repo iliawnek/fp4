@@ -12,6 +12,7 @@ module Tafl.Process
   ) where
 
 import System.Exit
+import Data.Typeable
 
 import Tafl.Core
 import Tafl.Logic
@@ -76,13 +77,11 @@ printBoard st = do
   putStrLn $ unlines [unwords [printSquare ((board st !! y) !! x) | x <- [0..8]] | y <- [0..8]]
 
 -- | Convert coordinates in algebraic notation into indices appropriate for the board data structure.
--- TODO: return error if input is not coordinate, or if coordinate is off the board
--- TODO: handle capital letters?
-parseCoordinateString :: String -> (Int, Int)
-parseCoordinateString (column:row) = (rowIndex, colIndex)
+parseCoord :: String -> (Int, Int)
+parseCoord (col:row) = (rowIndex, colIndex)
   where
     rowIndex = 8 - ((read row :: Int) - 1)
-    colIndex = (fromEnum column) - 97
+    colIndex = (fromEnum col) - 97
 
 -- | Move a piece on the board from one square to another.
 -- TODO: return error
@@ -90,16 +89,18 @@ makeMove :: GameState -> String -> String -> Either TaflError GameState
 makeMove st src dst =
   if (not $ inGame st)
     then Left CurrentlyUnusableCommand
-  else if (not $ isMoveValid st (iSrcRow, iSrcCol) (iDstRow, iDstCol))
+  else if not (isCoordValid src) || not (isCoordValid dst)
+    then Left InvalidMove
+  else if (not $ isMoveValid st (a, b) (x, y))
     then Left InvalidMove
   else
     Right newSt
   where
-    (iSrcRow, iSrcCol) = parseCoordinateString src
-    (iDstRow, iDstCol) = parseCoordinateString dst
-    srcSquare = getSquare st (iSrcRow, iSrcCol)
-    dstSquare = getSquare st (iDstRow, iDstCol)
-    newSt' = setSquare (setSquare st (iSrcRow, iSrcCol) Empty) (iDstRow, iDstCol) srcSquare
+    (a, b) = parseCoord src
+    (x, y) = parseCoord dst
+    srcSquare = getSquare st (a, b)
+    dstSquare = getSquare st (x, y)
+    newSt' = setSquare (setSquare st (a, b) Empty) (x, y) srcSquare
     newSt = switchPlayer newSt'
 
 -- | Process a user given command presented as a String, and update
