@@ -11,6 +11,8 @@ module Tafl.Core
   , initGameState
   , commandFromString
   , help_text
+  , getSquare
+  , setSquare
   ) where
 
 import System.Exit
@@ -63,7 +65,7 @@ initGameState (Just f) b = pure $ Left NotYetImplemented
 data TaflError = MalformedCommand
                | UnknownCommand
                | CurrentlyUnusableCommand
-               | IllegalMove
+               | InvalidMove
                | NotYetImplemented
 
 -- | REPL commands, you will need to extend this to capture all permissible REPL commands.
@@ -106,3 +108,15 @@ help_text = unlines $
   where
     prettyCmdHelp :: (String, String) -> String
     prettyCmdHelp (cmd, help) = concat ["\t:", cmd, "\t", " "] ++ help
+
+-- | Get the contents of a specific square on the board.
+getSquare :: GameState -> (Int, Int) -> Square
+getSquare st (rowIndex, colIndex) = ((board st) !! rowIndex) !! colIndex
+
+-- | Set the contents of a specific square on the board.
+setSquare :: GameState -> (Int, Int) -> Square -> GameState
+setSquare st (rowIndex, colIndex) replacement = st {board = newBoard}
+  where
+    replaceSquare = \(square, index) -> if (index == colIndex) then replacement else square
+    replaceRow = \(row, index) -> if (index == rowIndex) then (map replaceSquare (zip row [0..])) else row
+    newBoard = map replaceRow (zip (board st) [0..])

@@ -5,14 +5,24 @@ In this module you should define your game's logic and expose that logic through
 -}
 
 module Tafl.Logic
-  ( isMoveStraight
+  ( isMoveValid
   ) where
 
 import Tafl.Core
 
--- Determines if a move is legal.
+-- | Determines if a move is valid.
+isMoveValid :: GameState -> (Int, Int) -> (Int, Int) -> Bool
+isMoveValid st (a, b) (x, y) =
+  isMoveStraight (a, b) (x, y)
+  && isDestinationEmpty st (x, y)
+
+-- Determines if a move from one set of coordinates to another is straight.
 isMoveStraight :: (Int, Int) -> (Int, Int) -> Bool
-isMoveStraight (iSrcRow, iSrcCol) (iDstRow, iDstCol) = (iSrcRow == iDstRow) || (iSrcCol == iDstCol)
+isMoveStraight (a, b) (x, y) = (a == x) || (b == y)
+
+-- Determines if a move's destination is not currently occupied by another piece.
+isDestinationEmpty :: GameState -> (Int, Int) -> Bool
+isDestinationEmpty st (x, y) = getSquare st (x, y) == Empty
 
 -- Determines if a loaded game state is valid.
 

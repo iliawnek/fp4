@@ -42,13 +42,15 @@ processCommand st (Move src dst) = do
   let newSt = makeMove st src dst
   case newSt of
     (Left err) -> pure $ Left err
-    (Right st) -> pure $ newSt
+    (Right st) -> do
+      putStrLn "Move Successful"
+      pure $ newSt
 
 -- The remaining commands are to be added here.
 
 processCommand st _ = pure $ Left (UnknownCommand)
 
--- | A character to represent a piece on the board.
+-- | Returns a character to represent a piece on the board.
 printSquare :: Square -> String
 printSquare Empty = " "
 printSquare Object = "O"
@@ -82,26 +84,14 @@ parseCoordinateString (column:row) = (rowIndex, colIndex)
     rowIndex = 8 - ((read row :: Int) - 1)
     colIndex = (fromEnum column) - 97
 
--- | Get the contents of a specific square on the board.
-getSquare :: GameState -> (Int, Int) -> Square
-getSquare st (rowIndex, colIndex) = ((board st) !! rowIndex) !! colIndex
-
--- | Set the contents of a specific square on the board.
-setSquare :: GameState -> (Int, Int) -> Square -> GameState
-setSquare st (rowIndex, colIndex) replacement = st {board = newBoard}
-  where
-    replaceSquare = \(square, index) -> if (index == colIndex) then replacement else square
-    replaceRow = \(row, index) -> if (index == rowIndex) then (map replaceSquare (zip row [0..])) else row
-    newBoard = map replaceRow (zip (board st) [0..])
-
 -- | Move a piece on the board from one square to another.
 -- TODO: return error
 makeMove :: GameState -> String -> String -> Either TaflError GameState
 makeMove st src dst =
   if (not $ inGame st)
     then Left CurrentlyUnusableCommand
-  else if (not $ isMoveStraight (iSrcRow, iSrcCol) (iDstRow, iDstCol))
-    then Left IllegalMove
+  else if (not $ isMoveValid st (iSrcRow, iSrcCol) (iDstRow, iDstCol))
+    then Left InvalidMove
   else
     Right newSt
   where
@@ -109,9 +99,7 @@ makeMove st src dst =
     (iDstRow, iDstCol) = parseCoordinateString dst
     srcSquare = getSquare st (iSrcRow, iSrcCol)
     dstSquare = getSquare st (iDstRow, iDstCol)
-    newSt = if (dstSquare == Empty)
-      then setSquare (setSquare st (iSrcRow, iSrcCol) Empty) (iDstRow, iDstCol) srcSquare
-      else st
+    newSt = setSquare (setSquare st (iSrcRow, iSrcCol) Empty) (iDstRow, iDstCol) srcSquare
 
 -- | Process a user given command presented as a String, and update
 -- the GameState.
@@ -132,7 +120,7 @@ printError (MalformedCommand) = do
   putStrLn "The entered command was malformed."
 printError (UnknownCommand) = do
   putStrLn "The entered command was not recognised."
-printError (IllegalMove) = do
-  putStrLn "The entered move is illegal."
+printError (InvalidMove) = do
+  putStrLn "Invalid Move!"
 printError (CurrentlyUnusableCommand) = do
   putStrLn "The command cannot be used."
