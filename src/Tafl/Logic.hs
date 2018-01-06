@@ -5,13 +5,14 @@ In this module you should define your game's logic and expose that logic through
 -}
 
 module Tafl.Logic
-  (
-
+  ( isMoveStraight
   ) where
 
 import Tafl.Core
 
 -- Determines if a move is legal.
+isMoveStraight :: (Int, Int) -> (Int, Int) -> Bool
+isMoveStraight (iSrcRow, iSrcCol) (iDstRow, iDstCol) = (iSrcRow == iDstRow) || (iSrcCol == iDstCol)
 
 -- Determines if a loaded game state is valid.
 
