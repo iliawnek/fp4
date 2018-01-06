@@ -15,6 +15,7 @@ isMoveValid :: GameState -> (Int, Int) -> (Int, Int) -> Bool
 isMoveValid st (a, b) (x, y) =
   isMoveStraight (a, b) (x, y)
   && isDestinationEmpty st (x, y)
+  && isCurrentPlayersPiece st (a, b)
 
 -- Determines if a move from one set of coordinates to another is straight.
 isMoveStraight :: (Int, Int) -> (Int, Int) -> Bool
@@ -23,6 +24,17 @@ isMoveStraight (a, b) (x, y) = (a == x) || (b == y)
 -- Determines if a move's destination is not currently occupied by another piece.
 isDestinationEmpty :: GameState -> (Int, Int) -> Bool
 isDestinationEmpty st (x, y) = getSquare st (x, y) == Empty
+
+-- Determines if the moved piece belongs to the current player.
+isCurrentPlayersPiece :: GameState -> (Int, Int) -> Bool
+isCurrentPlayersPiece st (a, b) =
+  if ((currentPlayer st) == Objects)
+    then getSquare st (a, b) == Object
+    else getSquare st (a, b) == Guard || getSquare st (a, b) == Lambda
+
+-- | Determines if a move does not jump over another piece.
+-- isMoveUnblocked :: GameState -> (Int, Int) -> (Int, Int) -> Bool
+-- TODO
 
 -- Determines if a loaded game state is valid.
 

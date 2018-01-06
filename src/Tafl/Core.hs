@@ -13,6 +13,7 @@ module Tafl.Core
   , help_text
   , getSquare
   , setSquare
+  , switchPlayer
   ) where
 
 import System.Exit
@@ -37,7 +38,11 @@ starting_board = [[Empty,  Empty,  Empty,  Object, Object, Object, Empty,  Empty
 
 data Player = Lambdas
             | Objects
-            deriving Show
+            deriving (Show, Eq)
+
+-- | Switch to the other player so that they can make their turn.
+switchPlayer :: GameState -> GameState
+switchPlayer st = st {currentPlayer = if (currentPlayer st == Lambdas) then Objects else Lambdas}
 
 -- | The core game state that captures the state of the board, and
 -- whether we are playing a game or not.

@@ -99,7 +99,8 @@ makeMove st src dst =
     (iDstRow, iDstCol) = parseCoordinateString dst
     srcSquare = getSquare st (iSrcRow, iSrcCol)
     dstSquare = getSquare st (iDstRow, iDstCol)
-    newSt = setSquare (setSquare st (iSrcRow, iSrcCol) Empty) (iDstRow, iDstCol) srcSquare
+    newSt' = setSquare (setSquare st (iSrcRow, iSrcCol) Empty) (iDstRow, iDstCol) srcSquare
+    newSt = switchPlayer newSt'
 
 -- | Process a user given command presented as a String, and update
 -- the GameState.
