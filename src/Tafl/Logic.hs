@@ -8,6 +8,7 @@ module Tafl.Logic
   ( isMoveValid
   , isCoordStringValid
   , isCustodialCapturePossible
+  , isFortifiedLambdaCapturePossible
   ) where
 
 import Tafl.Core
@@ -90,7 +91,7 @@ isPieceConsumable st (a, b) =
 
 -- | Checks if a square contains a lambda in a fortified position (in or adjacent to castle).
 isFortifiedLambda :: GameState -> (Int, Int) -> Bool
-isFortifiedLambda st (a, b) = piece == Lambda && inFortifiedPosition
+isFortifiedLambda st (a, b) = inFortifiedPosition && piece == Lambda
   where
     piece = getSquare st (a, b)
     inFortifiedPosition =
@@ -100,6 +101,7 @@ isFortifiedLambda st (a, b) = piece == Lambda && inFortifiedPosition
       (a, b) == (4, 3) ||
       (a, b) == (4, 5)
 
+-- | Checks if a custodial capture is possible.
 isCustodialCapturePossible :: GameState -> (Int, Int) -> (Int, Int) -> Bool
 isCustodialCapturePossible st (a, b) (x, y) =
   isCoordValid (a, b) &&
@@ -107,6 +109,16 @@ isCustodialCapturePossible st (a, b) (x, y) =
   isPieceConsumable st (a, b) &&
   isPieceSupportive st (x, y) &&
   not (isFortifiedLambda st (a, b))
+
+-- | Checks if the capture of a fortified lambda (in or adjacent to castle) is possible.
+isFortifiedLambdaCapturePossible :: GameState -> (Int, Int) -> Bool
+isFortifiedLambdaCapturePossible st (a, b) =
+  (currentPlayer st) == Objects &&
+  isFortifiedLambda st (a, b) &&
+  isPieceSupportive st (a+1, b) &&
+  isPieceSupportive st (a-1, b) &&
+  isPieceSupportive st (a, b+1) &&
+  isPieceSupportive st (a, b-1)
 
 -- Determines if a loaded game state is valid.
 

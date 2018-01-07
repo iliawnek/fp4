@@ -8,7 +8,7 @@ module Tafl.Process
   , processCommandStr
   , printError
   , printMoveInfo
-  , makeMove -- TODO: remove?
+  , makeMove
   ) where
 
 import System.Exit
@@ -35,6 +35,7 @@ processCommand st Start = do
   pure $ Right newSt
 
 processCommand st Stop = do
+  -- TODO: reset game state
   let newSt = st {inGame=False}
   putStrLn "Stopping Game."
   pure $ Right newSt
@@ -105,18 +106,32 @@ makeMove st src dst =
     newStAfterCapture = removeCaptures newStAfterMove (x, y)
     newSt = switchPlayer newStAfterCapture
 
+-- | Remove all captured pieces.
 removeCaptures :: GameState -> (Int, Int) -> GameState
 removeCaptures st (x, y) =
   custodialCapture (x+1, y) (x+2, y) $
   custodialCapture (x-1, y) (x-2, y) $
   custodialCapture (x, y+1) (x, y+2) $
   custodialCapture (x, y-1) (x, y-2) $
+  fortifiedLambdaCapture (x+1, y) $
+  fortifiedLambdaCapture (x-1, y) $
+  fortifiedLambdaCapture (x, y+1) $
+  fortifiedLambdaCapture (x, y-1) $
   st
 
--- | Performs a custodial capture if the correct conditions are met.
+-- | Perform a custodial capture if the correct conditions are met.
 custodialCapture :: (Int, Int) -> (Int, Int) -> GameState -> GameState
 custodialCapture (a, b) (x, y) st =
   if isCustodialCapturePossible st (a, b) (x, y)
+  then newSt
+  else st
+  where
+    newSt = setSquare st (a, b) Empty
+
+-- | Perform a fortified lambda capture if the correct conditions are met.
+fortifiedLambdaCapture :: (Int, Int) -> GameState -> GameState
+fortifiedLambdaCapture (a, b) st =
+  if isFortifiedLambdaCapturePossible st (a, b)
   then newSt
   else st
   where
