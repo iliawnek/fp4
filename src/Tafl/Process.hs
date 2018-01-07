@@ -44,6 +44,7 @@ processCommand st (Move src dst) = do
   case newSt of
     (Left err) -> pure $ Left err
     (Right st) -> do
+      -- TODO: if win conditions met, print msg and reset state, else...
       putStrLn "Move Successful"
       pure $ newSt
 
@@ -100,8 +101,26 @@ makeMove st src dst =
     (x, y) = parseCoord dst
     srcSquare = getSquare st (a, b)
     dstSquare = getSquare st (x, y)
-    newSt' = setSquare (setSquare st (a, b) Empty) (x, y) srcSquare
-    newSt = switchPlayer newSt'
+    newStAfterMove = setSquare (setSquare st (a, b) Empty) (x, y) srcSquare
+    newStAfterCapture = removeCaptures newStAfterMove (x, y)
+    newSt = switchPlayer newStAfterCapture
+
+removeCaptures :: GameState -> (Int, Int) -> GameState
+removeCaptures st (x, y) =
+  custodialCapture (x+1, y) (x+2, y) $
+  custodialCapture (x-1, y) (x-2, y) $
+  custodialCapture (x, y+1) (x, y+2) $
+  custodialCapture (x, y-1) (x, y-2) $
+  st
+
+-- | Performs a custodial capture if the correct conditions are met.
+custodialCapture :: (Int, Int) -> (Int, Int) -> GameState -> GameState
+custodialCapture (a, b) (x, y) st =
+  if isCustodialCapturePossible st (a, b) (x, y)
+  then newSt
+  else st
+  where
+    newSt = setSquare st (a, b) Empty
 
 -- | Process a user given command presented as a String, and update
 -- the GameState.
