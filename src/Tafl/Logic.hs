@@ -24,27 +24,36 @@ isCoordValid coord =
 isMoveValid :: GameState -> (Int, Int) -> (Int, Int) -> Bool
 isMoveValid st (a, b) (x, y) =
   isMoveStraight (a, b) (x, y)
-  && isDestinationEmpty st (x, y)
   && isCurrentPlayersPiece st (a, b)
+  && isMoveUnobstructed st (a, b) (x, y)
+
+-- is src not empty?
+
+-- are src and dst different?
 
 -- | Determines if a move from one set of coordinates to another is straight.
 isMoveStraight :: (Int, Int) -> (Int, Int) -> Bool
 isMoveStraight (a, b) (x, y) = (a == x) || (b == y)
 
--- | Determines if a move's destination is not currently occupied by another piece.
-isDestinationEmpty :: GameState -> (Int, Int) -> Bool
-isDestinationEmpty st (x, y) = getSquare st (x, y) == Empty
-
--- | Determines if the moved piece belongs to the current player.
+-- | Determines if the piece to be moved belongs to the current player.
 isCurrentPlayersPiece :: GameState -> (Int, Int) -> Bool
 isCurrentPlayersPiece st (a, b) =
   if ((currentPlayer st) == Objects)
     then getSquare st (a, b) == Object
     else getSquare st (a, b) == Guard || getSquare st (a, b) == Lambda
 
--- | Determines if a move does not jump over another piece.
--- isMoveUnblocked :: GameState -> (Int, Int) -> (Int, Int) -> Bool
--- TODO
+-- | Determines if there are any pieces obstructing a move.
+isMoveUnobstructed :: GameState -> (Int, Int) -> (Int, Int) -> Bool
+isMoveUnobstructed st (a, b) (x, y) =
+  -- check all squares in path are empty
+  foldl (\res sq -> res && (sq == Empty)) True path
+    where
+      -- list of squares between src and dst, including dst
+      path = if a == x
+        -- +1 and -1 omits the src square from the path
+        then [((board st) !! a) !! i | i <- [((min (b+1) y))..(max (b-1) y)]]
+        else [((board st) !! i) !! b | i <- [((min (a+1) x))..(max (a-1) x)]]
+
 
 -- | Determines if a move does not enter the castle.
 -- isMoveOutsideCastle
