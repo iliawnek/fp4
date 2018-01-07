@@ -27,6 +27,7 @@ isMoveValid st (a, b) (x, y) =
   && wouldPieceMove (a, b) (x, y)
   && isMoveStraight (a, b) (x, y)
   && isMoveUnobstructed st (a, b) (x, y)
+  && not (isMoveIntoCastle (x, y))
 
 -- | Determines if the current player is permitted to move the source piece.
 isPieceMovable :: GameState -> (Int, Int) -> Bool
@@ -57,7 +58,10 @@ isMoveUnobstructed st (a, b) (x, y) =
         -- +1 and -1 omits the src square from the path
         then [((board st) !! a) !! i | i <- [((min (b+1) y))..(max (b-1) y)]]
         else [((board st) !! i) !! b | i <- [((min (a+1) x))..(max (a-1) x)]]
-
+        
+-- | Determines if the move is attempting to enter the castle.
+isMoveIntoCastle :: (Int, Int) -> Bool
+isMoveIntoCastle (x, y) = x == 4 && y == 4
 
 -- | Determines if a move does not enter the castle.
 -- isMoveOutsideCastle
