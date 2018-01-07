@@ -6,19 +6,22 @@ In this module you should define your game's logic and expose that logic through
 
 module Tafl.Logic
   ( isMoveValid
-  , isCoordValid
+  , isCoordStringValid
   ) where
 
 import Tafl.Core
 
 -- | Validates a string coordinate in algebraic notation.
-isCoordValid :: String -> Bool
-isCoordValid coord =
+isCoordStringValid :: String -> Bool
+isCoordStringValid coord =
   (length coord) == 2
   && rowCode >= 97 && rowCode <= 105 && colCode >= 49 && colCode <= 57
     where
       rowCode = fromEnum $ head coord
       colCode = fromEnum $ (tail coord) !! 0 -- convert string to char
+
+-- | Checks if a coordinate pair is on the board.
+-- isCoordValid
 
 -- | Determines if a move is valid.
 isMoveValid :: GameState -> (Int, Int) -> (Int, Int) -> Bool
@@ -58,13 +61,16 @@ isMoveUnobstructed st (a, b) (x, y) =
         -- +1 and -1 omits the src square from the path
         then [((board st) !! a) !! i | i <- [((min (b+1) y))..(max (b-1) y)]]
         else [((board st) !! i) !! b | i <- [((min (a+1) x))..(max (a-1) x)]]
-        
+
 -- | Determines if the move is attempting to enter the castle.
 isMoveIntoCastle :: (Int, Int) -> Bool
 isMoveIntoCastle (x, y) = x == 4 && y == 4
 
--- | Determines if a move does not enter the castle.
--- isMoveOutsideCastle
+-- isPieceSupportive (ally or empty castle)
+
+-- isPieceConsumable (enemy)
+
+-- isFortifiedLambda
 
 -- Determines if a loaded game state is valid.
 

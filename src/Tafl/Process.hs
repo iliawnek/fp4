@@ -89,7 +89,7 @@ makeMove :: GameState -> String -> String -> Either TaflError GameState
 makeMove st src dst =
   if (not $ inGame st)
     then Left CurrentlyUnusableCommand
-  else if not (isCoordValid src) || not (isCoordValid dst)
+  else if not (isCoordStringValid src) || not (isCoordStringValid dst)
     then Left InvalidMove
   else if (not $ isMoveValid st (a, b) (x, y))
     then Left InvalidMove
