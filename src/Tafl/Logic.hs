@@ -23,24 +23,28 @@ isCoordValid coord =
 -- | Determines if a move is valid.
 isMoveValid :: GameState -> (Int, Int) -> (Int, Int) -> Bool
 isMoveValid st (a, b) (x, y) =
-  isMoveStraight (a, b) (x, y)
-  && isCurrentPlayersPiece st (a, b)
+  isPieceMovable st (a, b)
+  && wouldPieceMove (a, b) (x, y)
+  && isMoveStraight (a, b) (x, y)
   && isMoveUnobstructed st (a, b) (x, y)
 
--- is src not empty?
+-- | Determines if the current player is permitted to move the source piece.
+isPieceMovable :: GameState -> (Int, Int) -> Bool
+isPieceMovable st (a, b) =
+  not (piece == Empty) &&
+  if ((currentPlayer st) == Objects)
+    then piece == Object
+    else piece == Guard || piece == Lambda
+  where
+    piece = getSquare st (a, b)
 
--- are src and dst different?
+-- | Determines if a move actually attempts to change a piece's location on the board.
+wouldPieceMove :: (Int, Int) -> (Int, Int) -> Bool
+wouldPieceMove (a, b) (x, y) = not (a == b) || not (x == y)
 
 -- | Determines if a move from one set of coordinates to another is straight.
 isMoveStraight :: (Int, Int) -> (Int, Int) -> Bool
 isMoveStraight (a, b) (x, y) = (a == x) || (b == y)
-
--- | Determines if the piece to be moved belongs to the current player.
-isCurrentPlayersPiece :: GameState -> (Int, Int) -> Bool
-isCurrentPlayersPiece st (a, b) =
-  if ((currentPlayer st) == Objects)
-    then getSquare st (a, b) == Object
-    else getSquare st (a, b) == Guard || getSquare st (a, b) == Lambda
 
 -- | Determines if there are any pieces obstructing a move.
 isMoveUnobstructed :: GameState -> (Int, Int) -> (Int, Int) -> Bool
