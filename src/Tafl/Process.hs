@@ -48,20 +48,17 @@ processCommand st (Move src dst) = do
     (Right st) -> do
       putStrLn "Move Successful"
       let winner = getWinner st
-      -- TODO: reset game state instead of ending the program.
       case winner of
-        Just Lambdas -> do
-          putStrLn "Lambdas Win"
-          exitWith ExitSuccess
-        Just Objects -> do
-          putStrLn "Objects Win"
-          exitWith ExitSuccess
+        Just player -> do
+          putStrLn $ (show player) ++ " Win"
+          initGameState Nothing (inTestMode st) -- reset game state
         Nothing -> pure $ newSt
 
 processCommand st (Save fname) = do
   saveGameState st fname
   pure $ Right st
 
+-- TODO: load should auto-start a game
 processCommand st (Load fname) = do
   result <- loadGameState st fname
   case result of
