@@ -9,6 +9,7 @@ module Tafl.Logic
   , isCoordStringValid
   , isCustodialCapturePossible
   , isFortifiedLambdaCapturePossible
+  , getWinner
   ) where
 
 import Tafl.Core
@@ -120,14 +121,45 @@ isFortifiedLambdaCapturePossible st (a, b) =
   isPieceSupportive st (a, b+1) &&
   isPieceSupportive st (a, b-1)
 
--- Determines if a loaded game state is valid.
+-- | Returns the winning player, if there is a winner.
+getWinner :: GameState -> Maybe Player
+getWinner st =
+  if (haveAllObjectsBeenCaptured st) || (hasLambdaEscaped st)
+    then Just Lambdas
+  else if hasLambdaBeenCaptured st
+    then Just Objects
+  else
+    Nothing
 
--- Determines which opposing pieces a move consumes.
+-- | Checks if all objects have been captured.
+haveAllObjectsBeenCaptured :: GameState -> Bool
+haveAllObjectsBeenCaptured st =
+  foldl (\res sq -> res && not (sq == Object)) True joined
+  where
+    joined = foldl (\acc row -> acc ++ row) [] (board st)
 
--- Determines if any moves are possible.
+-- | Checks if the lambda has reached an edge.
+hasLambdaEscaped :: GameState -> Bool
+hasLambdaEscaped st =
+  (length escapedLambdas) > 0
+    where
+      -- index all squares with their coordinates
+      indexed = [zip3 (fst x) (repeat (snd x)) [0..] | x <- zip (board st) [0..]]
+      joined = foldl (\acc sq -> acc ++ sq) [] indexed
+      -- apply filter to squares leaving only the escaped lambda
+      isEscapedLambda :: (Square, Int, Int) -> Bool
+      isEscapedLambda (sq, row, col) =
+        sq == Lambda &&
+        ((row == 0 || row == 8) || (col == 0 || col == 8))
+      escapedLambdas = filter isEscapedLambda joined
 
--- Determines if the lambda has reached an edge.
+-- | Checks if lambda has been captured.
+hasLambdaBeenCaptured :: GameState -> Bool
+hasLambdaBeenCaptured st =
+  foldl (\res sq -> res && not (sq == Lambda)) True joined
+  where
+    joined = foldl (\acc row -> acc ++ row) [] (board st)
 
--- Determines if the current player is permitted to move the selected piece.
+-- Determines if any moves are possible (draw).
 
--- Determines if the opposing player has no more pieces.
+-- Checks if a loaded game state is valid.

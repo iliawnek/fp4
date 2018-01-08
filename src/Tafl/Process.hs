@@ -45,9 +45,17 @@ processCommand st (Move src dst) = do
   case newSt of
     (Left err) -> pure $ Left err
     (Right st) -> do
-      -- TODO: if win conditions met, print msg and reset state, else...
       putStrLn "Move Successful"
-      pure $ newSt
+      let winner = getWinner st
+      -- End game if someone wins.
+      case winner of
+        Just Lambdas -> do
+          putStrLn "Lambdas Win"
+          exitWith ExitSuccess
+        Just Objects -> do
+          putStrLn "Objects Win"
+          exitWith ExitSuccess
+        Nothing -> pure $ newSt
 
 -- The remaining commands are to be added here.
 
