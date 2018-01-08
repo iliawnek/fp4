@@ -53,7 +53,7 @@ starting_board = [[Empty,  Empty,  Empty,  Object, Object, Object, Empty,  Empty
                  ,[Object, Empty,  Empty,  Empty,  Guard,  Empty,  Empty,  Empty,  Object]
                  ,[Empty,  Empty,  Empty,  Empty,  Guard,  Empty,  Empty,  Empty,  Empty ]
                  ,[Empty,  Empty,  Empty,  Empty,  Object, Empty,  Empty,  Empty,  Empty ]
-                 ,[Empty,  Empty,  Empty,  Object, Object, Object, Empty,  Empty,  Empty]]
+                 ,[Empty,  Empty,  Empty,  Object, Object, Object, Empty,  Empty,  Empty ]]
 
 data Player = Lambdas
             | Objects
