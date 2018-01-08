@@ -63,8 +63,12 @@ processCommand st (Save fname) = do
   pure $ Right st
 
 processCommand st (Load fname) = do
-  loadGameState fname
-  pure $ Right st
+  result <- loadGameState st fname
+  case result of
+    (Left err) -> pure $ Left err
+    (Right st) -> do
+      putStrLn $ "State loaded from " ++ fname
+      pure $ Right st
 
 -- The remaining commands are to be added here.
 
@@ -170,3 +174,9 @@ printError (InvalidMove) = do
   putStrLn "Invalid Move!"
 printError (CurrentlyUnusableCommand) = do
   putStrLn "The command cannot be used."
+printError (CannotSave) = do
+  putStrLn "Cannot save game."
+printError (CannotLoad) = do
+  putStrLn "Cannot load saved game state."
+printError (MalformedGameState) = do
+  putStrLn "Malformed Game State"

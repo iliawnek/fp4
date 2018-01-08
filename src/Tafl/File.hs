@@ -28,10 +28,15 @@ saveGameState st fname = do
   putStrLn $ "State saved in " ++ fname
 
 -- TODO: no message if read fails
-loadGameState :: String -> IO ()
-loadGameState fname = do
+loadGameState :: GameState -> String -> IO (Either TaflError GameState)
+loadGameState st fname = do
   csvString <- readFile fname
   let csvSt = map (splitOn ",") (endBy "\n" csvString)
   if validateLoadedGameState csvSt
-    then print "valid!"
-    else print "invalid!"
+    then do
+      let turn = (csvSt !! 0) !! 0
+      let newPlayer = if turn == "G to play" then Lambdas else Objects
+      let newBoard = map (map symbolToSquare) [csvSt !! i | i <- [1..9]]
+      let newSt = st {currentPlayer = newPlayer, board = newBoard}
+      pure $ Right newSt
+    else pure $ Left MalformedGameState
