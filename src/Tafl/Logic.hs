@@ -10,6 +10,7 @@ module Tafl.Logic
   , isCustodialCapturePossible
   , isFortifiedLambdaCapturePossible
   , getWinner
+  , validateLoadedGameState
   ) where
 
 import Tafl.Core
@@ -163,3 +164,30 @@ hasLambdaBeenCaptured st =
 -- Determines if any moves are possible (draw).
 
 -- Checks if a loaded game state is valid.
+validateLoadedGameState :: [[String]] -> Bool
+validateLoadedGameState csvSt =
+  (length csvSt) == 10 &&
+  (length turnLine) == 1 &&
+  (turn == "G to play" || turn == "O to play") &&
+  -- all board rows must have exactly 9 values
+  foldl (\acc len -> acc && (len == 9)) True (map length boardLines) &&
+  -- all board symbols must be valid squares
+  foldl (\acc sym -> acc && (validateSymbol sym)) True symbols &&
+  -- if there is an X, it must be in the middle
+  ((countSymbol "X") == 0 ||
+  ((countSymbol "X") == 1 && castleSymbol == "X")) &&
+  -- castle symbol must be X or L
+  (castleSymbol == "X" || castleSymbol == "L") &&
+  -- cannot exceed maximum number of each piece
+  (countSymbol "L") <= 1 &&
+  (countSymbol "G") <= 8 &&
+  (countSymbol "O") <= 16
+  where
+    turnLine = csvSt !! 0
+    turn = turnLine !! 0
+    boardLines = [csvSt !! i | i <- [1..9]]
+    symbols = foldl (++) [] boardLines
+    validateSymbol s =
+      s == " " || s == "O" || s == "L" || s == "G" || s == "X"
+    countSymbol sym = foldl (\c s -> if s == sym then c + 1 else c) 0 symbols
+    castleSymbol = symbols !! 40

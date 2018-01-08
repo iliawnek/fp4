@@ -14,6 +14,8 @@ module Tafl.Core
   , getSquare
   , setSquare
   , switchPlayer
+  , squareToSymbol
+  , symbolToSquare
   ) where
 
 import System.Exit
@@ -23,7 +25,24 @@ data Square = Object
             | Lambda
             | Guard
             | Empty
+            | EmptyCastle -- only used for saving to file
             deriving (Show, Eq)
+
+-- | Returns a symbol to represent a square on the board.
+squareToSymbol :: Square -> String
+squareToSymbol Empty = " "
+squareToSymbol Object = "O"
+squareToSymbol Lambda = "L"
+squareToSymbol Guard = "G"
+squareToSymbol EmptyCastle = "X" -- only used for saving to file
+
+-- | Converts a symbol to a square.
+symbolToSquare :: String -> Square
+symbolToSquare " " = Empty
+symbolToSquare "O" = Object
+symbolToSquare "L" = Lambda
+symbolToSquare "G" = Guard
+symbolToSquare "X" = Empty
 
 starting_board :: [[Square]]
 starting_board = [[Empty,  Empty,  Empty,  Object, Object, Object, Empty,  Empty,  Empty ]
@@ -71,6 +90,9 @@ data TaflError = MalformedCommand
                | UnknownCommand
                | CurrentlyUnusableCommand
                | InvalidMove
+               | CannotSave
+               | CannotLoad
+               | MalformedGameState
                | NotYetImplemented
 
 -- | REPL commands, you will need to extend this to capture all permissible REPL commands.
@@ -79,6 +101,8 @@ data Command = Help
              | Start
              | Stop
              | Move String String
+             | Save String
+             | Load String
 
 -- | Try to construct a command from the given string.
 commandFromString :: String -> Either TaflError Command
@@ -89,12 +113,16 @@ commandFromString (':':rest) =
     ["start"] -> Right Start
     ["stop"]  -> Right Stop
     ["move", src, dst]  -> Right (Move src dst)
+    ["save", fname]  -> Right (Save fname)
+    ["load", fname]  -> Right (Load fname)
 
     ("help":_)  -> Left MalformedCommand
     ("exit":_)  -> Left MalformedCommand
     ("start":_)  -> Left MalformedCommand
     ("stop":_)  -> Left MalformedCommand
     ("move":_)  -> Left MalformedCommand
+    ("save":_)  -> Left MalformedCommand
+    ("load":_)  -> Left MalformedCommand
 
     _ -> Left UnknownCommand
 

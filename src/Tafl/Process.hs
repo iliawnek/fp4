@@ -16,6 +16,7 @@ import Data.Typeable
 
 import Tafl.Core
 import Tafl.Logic
+import Tafl.File
 
 -- | Process user commands and updates the GameState.
 -- Returns a `TaflError`
@@ -47,7 +48,7 @@ processCommand st (Move src dst) = do
     (Right st) -> do
       putStrLn "Move Successful"
       let winner = getWinner st
-      -- End game if someone wins.
+      -- TODO: reset game state instead of ending the program.
       case winner of
         Just Lambdas -> do
           putStrLn "Lambdas Win"
@@ -57,16 +58,17 @@ processCommand st (Move src dst) = do
           exitWith ExitSuccess
         Nothing -> pure $ newSt
 
+processCommand st (Save fname) = do
+  saveGameState st fname
+  pure $ Right st
+
+processCommand st (Load fname) = do
+  loadGameState fname
+  pure $ Right st
+
 -- The remaining commands are to be added here.
 
 processCommand st _ = pure $ Left (UnknownCommand)
-
--- | Returns a character to represent a piece on the board.
-printSquare :: Square -> String
-printSquare Empty = " "
-printSquare Object = "O"
-printSquare Lambda = "L"
-printSquare Guard = "G"
 
 -- | Print all relevant info regarding the next move.
 printMoveInfo :: GameState -> IO ()
@@ -84,7 +86,7 @@ printCurrentPlayer st = do
 printBoard :: GameState -> IO ()
 printBoard st = do
   putStr "\n"
-  putStrLn $ unlines [unwords [printSquare ((board st !! y) !! x) | x <- [0..8]] | y <- [0..8]]
+  putStrLn $ unlines [unwords [squareToSymbol ((board st !! y) !! x) | x <- [0..8]] | y <- [0..8]]
 
 -- | Convert coordinates in algebraic notation into indices appropriate for the board data structure.
 parseCoord :: String -> (Int, Int)
