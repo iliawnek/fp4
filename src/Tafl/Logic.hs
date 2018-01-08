@@ -11,6 +11,7 @@ module Tafl.Logic
   , isFortifiedLambdaCapturePossible
   , getWinner
   , validateLoadedGameState
+  , canPlayerMove
   ) where
 
 import Tafl.Core
@@ -31,15 +32,15 @@ isCoordValid (a, b) = a >= 0 && a <= 8 && b >= 0 && b <= 8
 -- | Checks if a move is valid.
 isMoveValid :: GameState -> (Int, Int) -> (Int, Int) -> Bool
 isMoveValid st (a, b) (x, y) =
-  isPieceMovable st (a, b)
+  isPieceControllable st (a, b)
   && wouldPieceMove (a, b) (x, y)
   && isMoveStraight (a, b) (x, y)
   && isMoveUnobstructed st (a, b) (x, y)
   && not (isCastle (x, y))
 
 -- | Checks if the current player is permitted to move the source piece.
-isPieceMovable :: GameState -> (Int, Int) -> Bool
-isPieceMovable st (a, b) =
+isPieceControllable :: GameState -> (Int, Int) -> Bool
+isPieceControllable st (a, b) =
   if (currentPlayer st) == Objects
     then piece == Object
     else piece == Guard || piece == Lambda
@@ -79,14 +80,14 @@ isCastle (x, y) = x == 4 && y == 4
 -- | Checks if a piece can help the current player capture an enemy piece.
 isPieceSupportive :: GameState -> (Int, Int) -> Bool
 isPieceSupportive st (a, b) =
-  isEmptyCastle || (isPieceMovable st (a, b))
+  isEmptyCastle || (isPieceControllable st (a, b))
   where
     isEmptyCastle = (isCastle (a, b)) && (isPieceEmpty st (a, b))
 
 -- | Checks if a piece could be consumed by the current player.
 isPieceConsumable :: GameState -> (Int, Int) -> Bool
 isPieceConsumable st (a, b) =
-  not (isPieceMovable st (a, b)) && not (isPieceEmpty st (a, b))
+  not (isPieceControllable st (a, b)) && not (isPieceEmpty st (a, b))
 
 -- | Checks if a square contains a lambda in a fortified position (in or adjacent to castle).
 isFortifiedLambda :: GameState -> (Int, Int) -> Bool
@@ -130,11 +131,20 @@ getWinner st =
     Nothing
 
 -- | Checks if the current player can move any of their pieces.
--- cantMove :: GameState -> Bool
--- cantMove st =
---   asdfja;s
---   where
---     if (currentPlayer st) == Object
+canPlayerMove :: GameState -> Bool
+canPlayerMove st =
+  foldl (\acc canMove -> acc || canMove) False ownPiecesCanMove
+  where
+    positions = [(i, j) | i <- [0..8], j <- [0..8]]
+    ownPiecePositions = filter (\p -> isPieceControllable st p) positions
+    ownPiecesCanMove = map (\p -> canPieceMove st p) ownPiecePositions
+
+canPieceMove :: GameState -> (Int, Int) -> Bool
+canPieceMove st (a, b) =
+  (isCoordValid (a-1, b) && isMoveUnobstructed st (a, b) (a-1, b)) ||
+  (isCoordValid (a+1, b) && isMoveUnobstructed st (a, b) (a+1, b)) ||
+  (isCoordValid (a, b-1) && isMoveUnobstructed st (a, b) (a, b-1)) ||
+  (isCoordValid (a, b+1) && isMoveUnobstructed st (a, b) (a, b+1))
 
 -- | Checks if all objects have been captured.
 haveAllObjectsBeenCaptured :: GameState -> Bool
@@ -164,8 +174,6 @@ hasLambdaBeenCaptured st =
   foldl (\res sq -> res && not (sq == Lambda)) True joined
   where
     joined = foldl (\acc row -> acc ++ row) [] (board st)
-
--- Checks if any moves are possible (draw).
 
 -- Checks if a loaded game state is valid.
 validateLoadedGameState :: [[String]] -> Bool

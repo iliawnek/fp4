@@ -42,17 +42,22 @@ processCommand st Stop = do
   pure $ Right newSt
 
 processCommand st (Move src dst) = do
-  let newSt = makeMove st src dst
-  case newSt of
+  let result = makeMove st src dst
+  case result of
     (Left err) -> pure $ Left err
-    (Right st) -> do
+    (Right newSt) -> do
       putStrLn "Move Successful"
-      let winner = getWinner st
+      let winner = getWinner newSt
       case winner of
         Just player -> do
           putStrLn $ (show player) ++ " Win"
-          initGameState Nothing (inTestMode st) -- reset game state
-        Nothing -> pure $ newSt
+          initGameState Nothing (inTestMode newSt) -- reset game state
+        Nothing -> do
+          if canPlayerMove newSt
+            then pure $ Right newSt
+            else do
+              putStrLn "Draw"
+              initGameState Nothing (inTestMode newSt) -- reset game state
 
 processCommand st (Save fname) = do
   result <- saveGameState st fname
