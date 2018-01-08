@@ -55,8 +55,12 @@ processCommand st (Move src dst) = do
         Nothing -> pure $ newSt
 
 processCommand st (Save fname) = do
-  saveGameState st fname
-  pure $ Right st
+  result <- saveGameState st fname
+  case result of
+    Just err -> pure $ Left err
+    Nothing -> do
+      putStrLn $ "State saved in " ++ fname
+      pure $ Right st
 
 -- TODO: load should auto-start a game
 processCommand st (Load fname) = do
@@ -162,18 +166,18 @@ processCommandStr st str =
 -- | Print an Error to STDOUT.
 printError :: TaflError -> IO ()
 printError (NotYetImplemented) = do
-  putStrLn "Not Yet Implemented."
+  putStrLn "Not Yet Implemented"
 printError (MalformedCommand) = do
-  putStrLn "The entered command was malformed."
+  putStrLn "The entered command was malformed"
 printError (UnknownCommand) = do
-  putStrLn "The entered command was not recognised."
+  putStrLn "The entered command was not recognised"
 printError (InvalidMove) = do
   putStrLn "Invalid Move!"
 printError (CurrentlyUnusableCommand) = do
-  putStrLn "The command cannot be used."
+  putStrLn "The command cannot be used"
 printError (CannotSave) = do
-  putStrLn "Cannot save game."
+  putStrLn "Cannot save game"
 printError (CannotLoad) = do
-  putStrLn "Cannot load saved game state."
+  putStrLn "Cannot load saved game state"
 printError (MalformedGameState) = do
   putStrLn "Malformed Game State"
