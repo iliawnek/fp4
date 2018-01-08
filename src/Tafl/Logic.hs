@@ -123,7 +123,7 @@ isFortifiedLambdaCapturePossible st (a, b) =
 -- | Returns the winning player, if there is a winner.
 getWinner :: GameState -> Maybe Player
 getWinner st =
-  if (haveAllObjectsBeenCaptured st) || (hasLambdaEscaped st)
+  if (haveAllObjectsBeenCaptured st) || (canLambdaEscape st)
     then Just Lambdas
   else if hasLambdaBeenCaptured st
     then Just Objects
@@ -153,20 +153,19 @@ haveAllObjectsBeenCaptured st =
   where
     joined = foldl (\acc row -> acc ++ row) [] (board st)
 
--- | Checks if the lambda has reached an edge.
-hasLambdaEscaped :: GameState -> Bool
-hasLambdaEscaped st =
-  (length escapedLambdas) > 0
-    where
-      -- index all squares with their coordinates
-      indexed = [zip3 (fst x) (repeat (snd x)) [0..] | x <- zip (board st) [0..]]
-      joined = foldl (\acc sq -> acc ++ sq) [] indexed
-      -- apply filter to squares leaving only the escaped lambda
-      isEscapedLambda :: (Square, Int, Int) -> Bool
-      isEscapedLambda (sq, row, col) =
-        sq == Lambda &&
-        ((row == 0 || row == 8) || (col == 0 || col == 8))
-      escapedLambdas = filter isEscapedLambda joined
+-- | Checks if the lambda can reach the edge of the board (only if it is the lambdas' turn).
+canLambdaEscape :: GameState -> Bool
+canLambdaEscape st =
+  (currentPlayer st) == Lambdas &&
+  (length lambdaPositions) == 1 &&
+  ( isMoveUnobstructed st (a, b) (0, b) ||
+    isMoveUnobstructed st (a, b) (8, b) ||
+    isMoveUnobstructed st (a, b) (a, 0) ||
+    isMoveUnobstructed st (a, b) (a, 8)  )
+  where
+    positions = [(i, j) | i <- [0..8], j <- [0..8]]
+    lambdaPositions = filter (\p -> (getSquare st p) == Lambda) positions
+    (a, b) = lambdaPositions !! 0
 
 -- | Checks if lambda has been captured.
 hasLambdaBeenCaptured :: GameState -> Bool
