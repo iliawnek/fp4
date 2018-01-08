@@ -28,7 +28,7 @@ isCoordStringValid coord =
 isCoordValid :: (Int, Int) -> Bool
 isCoordValid (a, b) = a >= 0 && a <= 8 && b >= 0 && b <= 8
 
--- | Determines if a move is valid.
+-- | Checks if a move is valid.
 isMoveValid :: GameState -> (Int, Int) -> (Int, Int) -> Bool
 isMoveValid st (a, b) (x, y) =
   isPieceMovable st (a, b)
@@ -37,25 +37,30 @@ isMoveValid st (a, b) (x, y) =
   && isMoveUnobstructed st (a, b) (x, y)
   && not (isCastle (x, y))
 
--- | Determines if the current player is permitted to move the source piece.
+-- | Checks if the current player is permitted to move the source piece.
 isPieceMovable :: GameState -> (Int, Int) -> Bool
 isPieceMovable st (a, b) =
-  not (piece == Empty) &&
   if (currentPlayer st) == Objects
     then piece == Object
     else piece == Guard || piece == Lambda
   where
     piece = getSquare st (a, b)
 
--- | Determines if a move actually attempts to change a piece's location on the board.
+isPieceEmpty :: GameState -> (Int, Int) -> Bool
+isPieceEmpty st (a, b) =
+  piece == Empty
+  where
+    piece = getSquare st (a, b)
+
+-- | Checks if a move actually attempts to change a piece's location on the board.
 wouldPieceMove :: (Int, Int) -> (Int, Int) -> Bool
 wouldPieceMove (a, b) (x, y) = not (a == b) || not (x == y)
 
--- | Determines if a move from one set of coordinates to another is straight.
+-- | Checks if a move from one set of coordinates to another is straight.
 isMoveStraight :: (Int, Int) -> (Int, Int) -> Bool
 isMoveStraight (a, b) (x, y) = (a == x) || (b == y)
 
--- | Determines if there are any pieces obstructing a move.
+-- | Checks if there are any pieces obstructing a move.
 isMoveUnobstructed :: GameState -> (Int, Int) -> (Int, Int) -> Bool
 isMoveUnobstructed st (a, b) (x, y) =
   -- check all squares in path are empty
@@ -67,29 +72,21 @@ isMoveUnobstructed st (a, b) (x, y) =
         then [((board st) !! a) !! i | i <- [((min (b+1) y))..(max (b-1) y)]]
         else [((board st) !! i) !! b | i <- [((min (a+1) x))..(max (a-1) x)]]
 
--- | Determines if the given square is a castle.
+-- | Checks if the given square is the castle.
 isCastle :: (Int, Int) -> Bool
 isCastle (x, y) = x == 4 && y == 4
 
 -- | Checks if a piece can help the current player capture an enemy piece.
 isPieceSupportive :: GameState -> (Int, Int) -> Bool
 isPieceSupportive st (a, b) =
-  isEmptyCastle ||
-  if (currentPlayer st) == Objects
-    then piece == Object
-    else piece == Guard || piece == Lambda
+  isEmptyCastle || (isPieceMovable st (a, b))
   where
-    isEmptyCastle = isCastle (a, b) && piece == Empty
-    piece = getSquare st (a, b)
+    isEmptyCastle = (isCastle (a, b)) && (isPieceEmpty st (a, b))
 
 -- | Checks if a piece could be consumed by the current player.
 isPieceConsumable :: GameState -> (Int, Int) -> Bool
 isPieceConsumable st (a, b) =
-  if (currentPlayer st) == Objects
-    then piece == Guard || piece == Lambda
-    else piece == Object
-  where
-    piece = getSquare st (a, b)
+  not (isPieceMovable st (a, b)) && not (isPieceEmpty st (a, b))
 
 -- | Checks if a square contains a lambda in a fortified position (in or adjacent to castle).
 isFortifiedLambda :: GameState -> (Int, Int) -> Bool
@@ -132,6 +129,13 @@ getWinner st =
   else
     Nothing
 
+-- | Checks if the current player can move any of their pieces.
+-- cantMove :: GameState -> Bool
+-- cantMove st =
+--   asdfja;s
+--   where
+--     if (currentPlayer st) == Object
+
 -- | Checks if all objects have been captured.
 haveAllObjectsBeenCaptured :: GameState -> Bool
 haveAllObjectsBeenCaptured st =
@@ -161,7 +165,7 @@ hasLambdaBeenCaptured st =
   where
     joined = foldl (\acc row -> acc ++ row) [] (board st)
 
--- Determines if any moves are possible (draw).
+-- Checks if any moves are possible (draw).
 
 -- Checks if a loaded game state is valid.
 validateLoadedGameState :: [[String]] -> Bool
