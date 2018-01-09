@@ -35,10 +35,8 @@ processCommand st Start = do
   pure $ Right newSt
 
 processCommand st Stop = do
-  -- TODO: reset game state
-  let newSt = st {inGame=False}
   putStrLn "Stopping Game."
-  pure $ Right newSt
+  initGameState Nothing (inTestMode st) -- reset game state
 
 processCommand st (Move src dst) = do
   let result = makeMove st src dst
@@ -75,8 +73,6 @@ processCommand st (Load fname) = do
       putStrLn $ "State loaded from " ++ fname
       pure $ Right st
 
--- The remaining commands are to be added here.
-
 processCommand st _ = pure $ Left (UnknownCommand)
 
 -- | Print all relevant info regarding the next move.
@@ -105,7 +101,6 @@ parseCoord (col:row) = (rowIndex, colIndex)
     colIndex = (fromEnum col) - 97
 
 -- | Move a piece on the board from one square to another.
--- TODO: return error
 makeMove :: GameState -> String -> String -> Either TaflError GameState
 makeMove st src dst =
   if (not $ inGame st)
