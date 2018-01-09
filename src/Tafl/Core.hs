@@ -186,7 +186,7 @@ loadGameState st fname = do
           let turn = (csvSt !! 0) !! 0
           let newPlayer = if turn == "G to play" then Lambdas else Objects
           let newBoard = map (map symbolToSquare) [csvSt !! i | i <- [1..9]]
-          let newSt = st {currentPlayer = newPlayer, board = newBoard}
+          let newSt = st {currentPlayer = newPlayer, board = newBoard, inGame = True}
           pure $ Right newSt
         else pure $ Left MalformedGameState
 

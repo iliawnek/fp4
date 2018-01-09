@@ -64,7 +64,6 @@ processCommand st (Save fname) = do
       putStrLn $ "State saved in " ++ fname
       pure $ Right st
 
--- TODO: load should auto-start a game
 processCommand st (Load fname) = do
   result <- loadGameState st fname
   case result of
