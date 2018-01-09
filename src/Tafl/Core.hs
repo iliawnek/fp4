@@ -124,7 +124,7 @@ commandFromString (':':rest) =
 
     ("help":_)  -> Left MalformedCommand
     ("exit":_)  -> Left MalformedCommand
-    ("start":_)  -> Left MalformedCommand
+    ("start":_) -> Left MalformedCommand
     ("stop":_)  -> Left MalformedCommand
     ("move":_)  -> Left MalformedCommand
     ("save":_)  -> Left MalformedCommand
@@ -183,6 +183,7 @@ loadGameState st fname = do
       let csvSt = map (splitOn ",") (endBy "\n" csvString)
       if validateLoadedGameState csvSt
         then do
+          putStrLn $ "State loaded from " ++ fname
           let turn = (csvSt !! 0) !! 0
           let newPlayer = if turn == "G to play" then Lambdas else Objects
           let newBoard = map (map symbolToSquare) [csvSt !! i | i <- [1..9]]

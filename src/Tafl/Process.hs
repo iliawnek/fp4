@@ -68,9 +68,7 @@ processCommand st (Load fname) = do
   result <- loadGameState st fname
   case result of
     (Left err) -> pure $ Left err
-    (Right st) -> do
-      putStrLn $ "State loaded from " ++ fname
-      pure $ Right st
+    (Right st) -> pure $ Right st
 
 processCommand st _ = pure $ Left (UnknownCommand)
 
