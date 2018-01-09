@@ -24,7 +24,6 @@ library
                      , Tafl.Interact
                      , Tafl.Options
                      , Tafl.Logic
-                     , Tafl.File
 
   -- List your dependancies here.
   build-depends:       base >= 4.7 && < 5

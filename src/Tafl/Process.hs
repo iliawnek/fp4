@@ -16,7 +16,6 @@ import Data.Typeable
 
 import Tafl.Core
 import Tafl.Logic
-import Tafl.File
 
 -- | Process user commands and updates the GameState.
 -- Returns a `TaflError`
@@ -170,8 +169,6 @@ processCommandStr st str =
 
 -- | Print an Error to STDOUT.
 printError :: TaflError -> IO ()
-printError (NotYetImplemented) = do
-  putStrLn "Not Yet Implemented"
 printError (MalformedCommand) = do
   putStrLn "The entered command was malformed"
 printError (UnknownCommand) = do
