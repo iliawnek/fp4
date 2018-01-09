@@ -13,6 +13,7 @@ module Tafl.Process
 
 import System.Exit
 import Data.Typeable
+import Data.List
 
 import Tafl.Core
 import Tafl.Logic
@@ -88,7 +89,10 @@ printCurrentPlayer st = do
 printBoard :: GameState -> IO ()
 printBoard st = do
   putStr "\n"
-  putStrLn $ unlines [unwords [squareToSymbol ((board st !! y) !! x) | x <- [0..8]] | y <- [0..8]]
+  let b = map (map squareToSymbol) (board st)
+  let bStyle = map (intersperse "|") b
+  let divider = intercalate "" $ replicate 33 "-"
+  putStrLn $ unlines $ intersperse divider $ map unwords bStyle
 
 -- | Convert coordinates in algebraic notation into indices appropriate for the board data structure.
 parseCoord :: String -> (Int, Int)
