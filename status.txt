@@ -1,0 +1,4 @@
+The program passes all provided 'Whole Program Tests'.
+The program fails all 'Testing Internals' tests. I am unsure why.
+All functions and data types have been documented.
+This design sets inGame to True when :start is used.
