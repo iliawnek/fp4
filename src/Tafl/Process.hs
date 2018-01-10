@@ -45,17 +45,7 @@ processCommand st (Move src dst) = do
     (Left err) -> pure $ Left err
     (Right newSt) -> do
       putStrLn "Move Successful"
-      let winner = getWinner newSt
-      case winner of
-        Just player -> do
-          putStrLn $ (show player) ++ " Win"
-          initGameState Nothing (inTestMode newSt) -- reset game state
-        Nothing -> do
-          if canPlayerMove newSt
-            then pure $ Right newSt
-            else do
-              putStrLn "Draw"
-              initGameState Nothing (inTestMode newSt) -- reset game state
+      checkEndGame newSt
 
 processCommand st (Save fname) = do
   result <- saveGameState st fname
@@ -69,7 +59,7 @@ processCommand st (Load fname) = do
   result <- loadGameState st fname
   case result of
     (Left err) -> pure $ Left err
-    (Right st) -> pure $ Right st
+    (Right newSt) -> checkEndGame newSt
 
 processCommand st _ = pure $ Left (UnknownCommand)
 
@@ -151,6 +141,20 @@ fortifiedLambdaCapture (a, b) st =
   else st
   where
     newSt = setSquare st (a, b) Empty
+
+checkEndGame :: GameState -> IO (Either TaflError GameState)
+checkEndGame st = do
+  let winner = getWinner st
+  case winner of
+    Just player -> do
+      putStrLn $ (show player) ++ " Win"
+      initGameState Nothing (inTestMode st) -- reset game state
+    Nothing -> do
+      if canPlayerMove st
+        then pure $ Right st
+        else do
+          putStrLn "Draw"
+          initGameState Nothing (inTestMode st) -- reset game state
 
 -- | Process a user given command presented as a String, and update
 -- the GameState.
