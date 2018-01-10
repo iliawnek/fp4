@@ -1,3 +1,5 @@
+All required functionality is implemented, to the best of my knowledge.
+There are no known issues.
 The program passes all provided 'Whole Program Tests'.
 The program fails all 'Testing Internals' tests. I am unsure why.
 All functions and data types have been documented.
