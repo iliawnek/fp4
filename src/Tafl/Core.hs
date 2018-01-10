@@ -10,7 +10,6 @@ module Tafl.Core
   , defaultGameState
   , initGameState
   , commandFromString
-  , help_text
   , getSquare
   , setSquare
   , switchPlayer
@@ -25,6 +24,8 @@ import Data.List
 import Data.List.Split
 import Control.Exception
 
+-- | A square on the board.
+-- May or may not contain a piece.
 data Square = Object
             | Lambda
             | Guard
@@ -32,24 +33,50 @@ data Square = Object
             | EmptyCastle -- only used for saving to file
             deriving (Show, Eq)
 
--- | Returns a symbol to represent a square on the board.
-squareToSymbol :: Square -> String
+-- | Returns a character symbol to represent a square on the board.
+squareToSymbol :: Square -- square to return a symbol for
+               -> String -- symbol
 squareToSymbol Empty = " "
 squareToSymbol Object = "O"
 squareToSymbol Lambda = "L"
 squareToSymbol Guard = "G"
 squareToSymbol EmptyCastle = "X" -- only used for saving to file
 
--- | Converts a symbol to a square.
-symbolToSquare :: String -> Square
+-- | Converts a character symbol to a square.
+-- Used when loading game state from file.
+symbolToSquare :: String -- string to return a Square instance for
+               -> Square
 symbolToSquare " " = Empty
 symbolToSquare "O" = Object
 symbolToSquare "L" = Lambda
 symbolToSquare "G" = Guard
 symbolToSquare "X" = Empty
 
-starting_board :: [[Square]]
-starting_board = [[Empty,  Empty,  Empty,  Object, Object, Object, Empty,  Empty,  Empty ]
+-- | Represents one of the two players playing the game.
+data Player = Lambdas
+            | Objects
+            deriving (Show, Eq)
+
+-- | Switch to the other player so that they can make their turn.
+switchPlayer :: GameState -- current game state
+             -> GameState -- game state after switching players
+switchPlayer st = st {currentPlayer = if (currentPlayer st == Lambdas) then Objects else Lambdas}
+
+-- | The core game state that captures:
+-- * whether we are playing a game or not
+-- * whether we are in testing mode or not (testing mode disables display of game state between moves)
+-- * the current state of the board
+-- * whose turn it is
+data GameState = GameState
+  { inGame        :: Bool
+  , inTestMode    :: Bool
+  , board         :: [[Square]]
+  , currentPlayer :: Player
+  }
+
+-- | Starting configuration of the board for new games.
+startingBoard :: [[Square]]
+startingBoard = [[Empty,  Empty,  Empty,  Object, Object, Object, Empty,  Empty,  Empty ]
                  ,[Empty,  Empty,  Empty,  Empty,  Object, Empty,  Empty,  Empty,  Empty ]
                  ,[Empty,  Empty,  Empty,  Empty,  Guard,  Empty,  Empty,  Empty,  Empty ]
                  ,[Object, Empty,  Empty,  Empty,  Guard,  Empty,  Empty,  Empty,  Object]
@@ -59,40 +86,24 @@ starting_board = [[Empty,  Empty,  Empty,  Object, Object, Object, Empty,  Empty
                  ,[Empty,  Empty,  Empty,  Empty,  Object, Empty,  Empty,  Empty,  Empty ]
                  ,[Empty,  Empty,  Empty,  Object, Object, Object, Empty,  Empty,  Empty ]]
 
-data Player = Lambdas
-            | Objects
-            deriving (Show, Eq)
+-- | Create a default starting game state (according to game rules).
+defaultGameState :: Bool -- should testing mode be enabled?
+                 -> GameState
+defaultGameState inTestMode = GameState False inTestMode startingBoard Objects
 
--- | Switch to the other player so that they can make their turn.
-switchPlayer :: GameState -> GameState
-switchPlayer st = st {currentPlayer = if (currentPlayer st == Lambdas) then Objects else Lambdas}
-
--- | The core game state that captures the state of the board, and
--- whether we are playing a game or not.
---
--- You will need to extend this to present the board.
-data GameState = GameState
-  { inGame        :: Bool
-  , inTestMode    :: Bool
-  , board         :: [[Square]]
-  , currentPlayer :: Player
-  }
-
-defaultGameState :: Bool -> Bool -> GameState
-defaultGameState inGame inTestMode = GameState inGame inTestMode starting_board Objects
-
--- Finish initGameState to read a board state from file.
-initGameState :: Maybe FilePath
-              -> Bool
+-- | Initialise a new game state.
+-- Returns a TaflError if the state cannot be loaded from file.
+initGameState :: Maybe FilePath -- path to file containing state, if supplied
+              -> Bool -- should testing mode be enabled?
               -> IO (Either TaflError GameState)
-initGameState Nothing  b = pure $ Right $ defaultGameState False b
+initGameState Nothing  b = pure $ Right $ defaultGameState b
 initGameState (Just f) b = do
-  result <- loadGameState (defaultGameState False b) f
+  result <- loadGameState (defaultGameState b) f
   case result of
     Left err -> pure $ Left err
     Right newSt -> pure $ Right newSt
 
--- | Errors encountered by the game, you will need to extend this to capture *ALL* possible errors.
+-- | All errors encountered by the game.
 data TaflError = MalformedCommand
                | UnknownCommand
                | CurrentlyUnusableCommand
@@ -101,7 +112,7 @@ data TaflError = MalformedCommand
                | CannotLoad
                | MalformedGameState
 
--- | REPL commands, you will need to extend this to capture all permissible REPL commands.
+-- | All supported REPL commands.
 data Command = Help
              | Exit
              | Start
@@ -111,7 +122,9 @@ data Command = Help
              | Load String
 
 -- | Try to construct a command from the given string.
-commandFromString :: String -> Either TaflError Command
+-- Return a TaflError if the string does not represent a supported command.
+commandFromString :: String -- command string
+                  -> Either TaflError Command
 commandFromString (':':rest) =
   case words rest of
     ["help"]  -> Right Help
@@ -134,33 +147,29 @@ commandFromString (':':rest) =
 
 commandFromString _  = Left UnknownCommand
 
+-- | Get the Square at a specific location on the board.
+getSquare :: GameState -- current game state
+          -> (Int, Int) -- coordinates of the square to be retrieved
+          -> Square
+getSquare st (a, b) = ((board st) !! a) !! b
 
-help_text :: String
-help_text = unlines $
-     [ "Tafl Help text:", ""]
-  ++ map prettyCmdHelp
-       [ ("help",  "Displays this help text." )
-       , ("exit",  "Exits the Command Prompt.")
-       , ("start", "Initiates a game."        )
-       , ("stop",  "Stops a game."            )
-       ]
+-- | Change a Square on the board.
+setSquare :: GameState -- current game state
+          -> (Int, Int) -- coordinates of the square to be changed
+          -> Square -- new Square value
+          -> GameState
+setSquare st (a, b) replacement = st {board = newBoard}
   where
-    prettyCmdHelp :: (String, String) -> String
-    prettyCmdHelp (cmd, help) = concat ["\t:", cmd, "\t", " "] ++ help
-
--- | Get the contents of a specific square on the board.
-getSquare :: GameState -> (Int, Int) -> Square
-getSquare st (rowIndex, colIndex) = ((board st) !! rowIndex) !! colIndex
-
--- | Set the contents of a specific square on the board.
-setSquare :: GameState -> (Int, Int) -> Square -> GameState
-setSquare st (rowIndex, colIndex) replacement = st {board = newBoard}
-  where
-    replaceSquare = \(square, index) -> if (index == colIndex) then replacement else square
-    replaceRow = \(row, index) -> if (index == rowIndex) then (map replaceSquare (zip row [0..])) else row
+    -- generate new board where only square at (a, b) has been changed
+    replaceSquare = \(sq, i) -> if (i == b) then replacement else sq
+    replaceRow = \(row, i) -> if (i == a) then (map replaceSquare (zip row [0..])) else row
     newBoard = map replaceRow (zip (board st) [0..])
 
-saveGameState :: GameState -> String -> IO (Maybe TaflError)
+-- | Save the current game state to a file.
+-- Return TaflError if given path cannot be saved to.
+saveGameState :: GameState -- current game state
+              -> String -- path to file
+              -> IO (Maybe TaflError)
 saveGameState st fname = do
   -- required for writing X for empty castle
   let st' = if getSquare st (4,4) == Empty then setSquare st (4,4) EmptyCastle else st
@@ -174,15 +183,22 @@ saveGameState st fname = do
     Left _ -> pure $ Just CannotSave
     Right _ -> pure $ Nothing
 
-loadGameState :: GameState -> String -> IO (Either TaflError GameState)
+-- | Load a game state from file, then return it.
+-- Return TaflError if file at given path cannot be read.
+-- Return TaflError if game state in file is malformed.
+loadGameState :: GameState -- current game state
+              -> String -- path to file
+              -> IO (Either TaflError GameState)
 loadGameState st fname = do
   result <- try (readFile fname) :: IO (Either SomeException String)
   case result of
     Left _ -> pure $ Left CannotLoad
     Right csvString -> do
+      -- convert CSV to list of lists
       let csvSt = map (splitOn ",") (endBy "\n" csvString)
       if validateLoadedGameState csvSt
         then do
+          -- generate new game state if it is valid
           putStrLn $ "State loaded from " ++ fname
           let turn = (csvSt !! 0) !! 0
           let newPlayer = if turn == "G to play" then Lambdas else Objects
@@ -191,8 +207,9 @@ loadGameState st fname = do
           pure $ Right newSt
         else pure $ Left MalformedGameState
 
--- Checks if a loaded game state is valid.
-validateLoadedGameState :: [[String]] -> Bool
+-- | Return True if a loaded game state is valid, according to the game's rules.
+validateLoadedGameState :: [[String]] -- loaded and parsed game state
+                        -> Bool
 validateLoadedGameState csvSt =
   (length csvSt) == 10 &&
   (length turnLine) == 1 &&

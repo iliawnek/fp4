@@ -1,6 +1,6 @@
 {- |
 
-This module defines the games two modes of interactions: REPL and REPL.
+This module defines REPL, the game's mode of interaction.
 
 -}
 module Tafl.Interact

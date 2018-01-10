@@ -1,6 +1,6 @@
 {- |
 
-In this module you should define your game's logic and expose that logic through a custom API.
+This module defines the game's logic.
 
 -}
 
@@ -15,8 +15,10 @@ module Tafl.Logic
 
 import Tafl.Core
 
--- | Validates a string coordinate in algebraic notation.
-isCoordStringValid :: String -> Bool
+-- | Validate string coordinates in algebraic notation.
+-- Return True if format is correct and coordinates lie on the board.
+isCoordStringValid :: String -- coordinates string
+                   -> Bool
 isCoordStringValid coord =
   (length coord) == 2
   && rowCode >= 97 && rowCode <= 105 && colCode >= 49 && colCode <= 57
@@ -24,12 +26,16 @@ isCoordStringValid coord =
       rowCode = fromEnum $ head coord
       colCode = fromEnum $ (tail coord) !! 0 -- convert string to char
 
--- | Checks if a coordinate pair is on the board.
-isCoordValid :: (Int, Int) -> Bool
+-- | Return True if coordinates lie on the board.
+isCoordValid :: (Int, Int) -- coordinates to be validated
+             -> Bool
 isCoordValid (a, b) = a >= 0 && a <= 8 && b >= 0 && b <= 8
 
--- | Checks if a move is valid.
-isMoveValid :: GameState -> (Int, Int) -> (Int, Int) -> Bool
+-- | Return True if a move is valid.
+isMoveValid :: GameState -- current game state
+            -> (Int, Int) -- source coordinates
+            -> (Int, Int) -- destination coordinates
+            -> Bool
 isMoveValid st (a, b) (x, y) =
   isPieceControllable st (a, b)
   && wouldPieceMove (a, b) (x, y)
@@ -37,8 +43,10 @@ isMoveValid st (a, b) (x, y) =
   && isMoveUnobstructed st (a, b) (x, y)
   && not (isCastle (x, y))
 
--- | Checks if the current player is permitted to move the source piece.
-isPieceControllable :: GameState -> (Int, Int) -> Bool
+-- | Return True if the current player is permitted to move the source piece.
+isPieceControllable :: GameState -- current game state
+                    -> (Int, Int) -- source coordinates
+                    -> Bool
 isPieceControllable st (a, b) =
   if (currentPlayer st) == Objects
     then piece == Object
@@ -46,22 +54,34 @@ isPieceControllable st (a, b) =
   where
     piece = getSquare st (a, b)
 
-isPieceEmpty :: GameState -> (Int, Int) -> Bool
-isPieceEmpty st (a, b) =
+-- | Return True if the given coordinate points to an Empty Square.
+isSquareEmpty :: GameState -- current game state
+             -> (Int, Int) -- coordinates to be checked
+             -> Bool
+isSquareEmpty st (a, b) =
   piece == Empty
   where
     piece = getSquare st (a, b)
 
--- | Checks if a move actually attempts to change a piece's location on the board.
-wouldPieceMove :: (Int, Int) -> (Int, Int) -> Bool
+-- | Return True if a move actually attempts to
+-- change a piece's location on the board.
+wouldPieceMove :: (Int, Int) -- source coordinates
+               -> (Int, Int) -- destination coordinates
+               -> Bool
 wouldPieceMove (a, b) (x, y) = not (a == b) || not (x == y)
 
--- | Checks if a move from one set of coordinates to another is straight.
-isMoveStraight :: (Int, Int) -> (Int, Int) -> Bool
+-- | Return True if a move from one set of coordinates to another
+-- is a straight line.
+isMoveStraight :: (Int, Int) -- source coordinates
+               -> (Int, Int) -- destination coordinates
+               -> Bool
 isMoveStraight (a, b) (x, y) = (a == x) || (b == y)
 
--- | Checks if there are any pieces obstructing a move.
-isMoveUnobstructed :: GameState -> (Int, Int) -> (Int, Int) -> Bool
+-- | Return True if there are any pieces obstructing a move.
+isMoveUnobstructed :: GameState -- current game state
+                   -> (Int, Int) -- source coordinates
+                   -> (Int, Int) -- destination coordinates
+                   -> Bool
 isMoveUnobstructed st (a, b) (x, y) =
   -- check all squares in path are empty
   foldl (\res sq -> res && (sq == Empty)) True path
@@ -72,24 +92,32 @@ isMoveUnobstructed st (a, b) (x, y) =
         then [((board st) !! a) !! i | i <- [((min (b+1) y))..(max (b-1) y)]]
         else [((board st) !! i) !! b | i <- [((min (a+1) x))..(max (a-1) x)]]
 
--- | Checks if the given square is the castle.
-isCastle :: (Int, Int) -> Bool
+-- | Return True if the given square is the castle.
+isCastle :: (Int, Int) -- coordinates to be checked
+         -> Bool
 isCastle (x, y) = x == 4 && y == 4
 
--- | Checks if a piece can help the current player capture an enemy piece.
-isPieceSupportive :: GameState -> (Int, Int) -> Bool
+-- | Return True if a piece can help the current player capture an enemy piece.
+isPieceSupportive :: GameState -- current game state
+                  -> (Int, Int) -- coordinates to be checked
+                  -> Bool
 isPieceSupportive st (a, b) =
   isEmptyCastle || (isPieceControllable st (a, b))
   where
-    isEmptyCastle = (isCastle (a, b)) && (isPieceEmpty st (a, b))
+    isEmptyCastle = (isCastle (a, b)) && (isSquareEmpty st (a, b))
 
--- | Checks if a piece could be consumed by the current player.
-isPieceConsumable :: GameState -> (Int, Int) -> Bool
+-- | Return True if a piece could be consumed by the current player.
+isPieceConsumable :: GameState -- current game state
+                  -> (Int, Int) -- coordinates to be checked
+                  -> Bool
 isPieceConsumable st (a, b) =
-  not (isPieceControllable st (a, b)) && not (isPieceEmpty st (a, b))
+  not (isPieceControllable st (a, b)) && not (isSquareEmpty st (a, b))
 
--- | Checks if a square contains a lambda in a fortified position (in or adjacent to castle).
-isFortifiedLambda :: GameState -> (Int, Int) -> Bool
+-- | Return True if a square contains a lambda
+-- in a fortified position (in or adjacent to castle).
+isFortifiedLambda :: GameState -- current game state
+                  -> (Int, Int) -- coordinates to be checked
+                  -> Bool
 isFortifiedLambda st (a, b) = inFortifiedPosition && piece == Lambda
   where
     piece = getSquare st (a, b)
@@ -100,8 +128,11 @@ isFortifiedLambda st (a, b) = inFortifiedPosition && piece == Lambda
       (a, b) == (4, 3) ||
       (a, b) == (4, 5)
 
--- | Checks if a custodial capture is possible.
-isCustodialCapturePossible :: GameState -> (Int, Int) -> (Int, Int) -> Bool
+-- | Return True if a custodial capture is possible.
+isCustodialCapturePossible :: GameState -- current game state
+                           -> (Int, Int) -- coordinates of piece to be captured
+                           -> (Int, Int) -- coordinates of supporting piece
+                           -> Bool
 isCustodialCapturePossible st (a, b) (x, y) =
   isCoordValid (a, b) &&
   isCoordValid (x, y) &&
@@ -109,8 +140,11 @@ isCustodialCapturePossible st (a, b) (x, y) =
   isPieceSupportive st (x, y) &&
   not (isFortifiedLambda st (a, b))
 
--- | Checks if the capture of a fortified lambda (in or adjacent to castle) is possible.
-isFortifiedLambdaCapturePossible :: GameState -> (Int, Int) -> Bool
+-- | Return True if the capture of a fortified lambda
+-- (in or adjacent to castle) is possible.
+isFortifiedLambdaCapturePossible :: GameState -- current game state
+                                 -> (Int, Int) -- coordinates of piece to be captured
+                                 -> Bool
 isFortifiedLambdaCapturePossible st (a, b) =
   (currentPlayer st) == Objects &&
   isFortifiedLambda st (a, b) &&
@@ -120,7 +154,8 @@ isFortifiedLambdaCapturePossible st (a, b) =
   isPieceSupportive st (a, b-1)
 
 -- | Returns the winning player, if there is a winner.
-getWinner :: GameState -> Maybe Player
+getWinner :: GameState -- current game state
+          -> Maybe Player
 getWinner st =
   if (haveAllObjectsBeenCaptured st) || (canLambdaEscape st)
     then Just Lambdas
@@ -129,31 +164,40 @@ getWinner st =
   else
     Nothing
 
--- | Checks if the current player can move any of their pieces.
-canPlayerMove :: GameState -> Bool
+-- | Return True if the current player can move any of their pieces.
+-- Used for checking draws.
+canPlayerMove :: GameState -- current game state
+              -> Bool
 canPlayerMove st =
-  foldl (\acc canMove -> acc || canMove) False ownPiecesCanMove
+  foldl (||) False ownPiecesCanMove
   where
     positions = [(i, j) | i <- [0..8], j <- [0..8]]
-    ownPiecePositions = filter (\p -> isPieceControllable st p) positions
-    ownPiecesCanMove = map (\p -> canPieceMove st p) ownPiecePositions
+    ownPiecePositions = filter (isPieceControllable st) positions
+    ownPiecesCanMove = map (canPieceMove st) ownPiecePositions
 
-canPieceMove :: GameState -> (Int, Int) -> Bool
+-- | Return True if a piece is able to move in any direction.
+canPieceMove :: GameState -- current game state
+             -> (Int, Int) -- coordinates to be checked
+             -> Bool
 canPieceMove st (a, b) =
   (isCoordValid (a-1, b) && isMoveUnobstructed st (a, b) (a-1, b)) ||
   (isCoordValid (a+1, b) && isMoveUnobstructed st (a, b) (a+1, b)) ||
   (isCoordValid (a, b-1) && isMoveUnobstructed st (a, b) (a, b-1)) ||
   (isCoordValid (a, b+1) && isMoveUnobstructed st (a, b) (a, b+1))
 
--- | Checks if all objects have been captured.
-haveAllObjectsBeenCaptured :: GameState -> Bool
+-- | Return True if all objects have been captured.
+haveAllObjectsBeenCaptured :: GameState -- current game state
+                           -> Bool
 haveAllObjectsBeenCaptured st =
   foldl (\res sq -> res && not (sq == Object)) True joined
   where
-    joined = foldl (\acc row -> acc ++ row) [] (board st)
+    -- join rows on board for simpler traversal
+    joined = foldl (++) [] (board st)
 
--- | Checks if the lambda can reach the edge of the board (only if it is the lambdas' turn).
-canLambdaEscape :: GameState -> Bool
+-- | Return True if the lambda can reach the edge
+-- of the board (only if it is the lambdas' turn).
+canLambdaEscape :: GameState -- current game state
+                -> Bool
 canLambdaEscape st =
   (currentPlayer st) == Lambdas &&
   (length lambdaPositions) == 1 &&
@@ -164,11 +208,13 @@ canLambdaEscape st =
   where
     positions = [(i, j) | i <- [0..8], j <- [0..8]]
     lambdaPositions = filter (\p -> (getSquare st p) == Lambda) positions
-    (a, b) = lambdaPositions !! 0
+    (a, b) = lambdaPositions !! 0 -- current position of lambda
 
--- | Checks if lambda has been captured.
-hasLambdaBeenCaptured :: GameState -> Bool
+-- | Return True if lambda has been captured.
+hasLambdaBeenCaptured :: GameState -- current game state
+                      -> Bool
 hasLambdaBeenCaptured st =
   foldl (\res sq -> res && not (sq == Lambda)) True joined
   where
-    joined = foldl (\acc row -> acc ++ row) [] (board st)
+    -- join rows on board for simpler traversal
+    joined = foldl (++) [] (board st)
